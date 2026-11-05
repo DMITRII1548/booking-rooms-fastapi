@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-
+from datetime import datetime
 from app.repositories import booking as booking_repository
 from app.repositories import room as room_repository
 from app.repositories import user as user_repository
@@ -27,6 +27,12 @@ def delete_booking(id: int) -> None:
         raise HTTPException(
             404,
             detail="Booking not found"
+        )
+
+    if booking["start_time"] <= datetime.now():
+        raise HTTPException(
+            400,
+            detail="Cannot delete a booking that has already started"
         )
 
     booking_repository.delete_booking(id)
