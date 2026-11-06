@@ -65,6 +65,12 @@ def update_booking(booking_id: int, data: UpdateBookingRequest) -> dict[str, Any
             detail="Booking not found"
         )
 
+    if booking["start_time"] <= datetime.now():
+        raise HTTPException(
+            400,
+            detail="Cannot update a booking that has already started"
+        )
+
     if booking_repository.has_overlap(booking["room_id"], data.start_time, data.end_time, booking_id):
         raise HTTPException(
             400,
