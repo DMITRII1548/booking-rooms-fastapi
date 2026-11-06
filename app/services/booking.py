@@ -58,13 +58,14 @@ def create_booking(data: CreateBookingRequest) -> dict[str, Any]:
     )
 
 def update_booking(booking_id: int, data: UpdateBookingRequest) -> dict[str, Any]:
-    if booking_repository.get_booking_by_id(booking_id) is None:
+    booking = booking_repository.get_booking_by_id(booking_id)
+    if booking is None:
         raise HTTPException(
             404,
             detail="Booking not found"
         )
 
-    if booking_repository.has_overlap(booking_id, data.start_time, data.end_time, booking_id):
+    if booking_repository.has_overlap(booking["room_id"], data.start_time, data.end_time, booking_id):
         raise HTTPException(
             400,
             detail="Room is overlap on this time"
