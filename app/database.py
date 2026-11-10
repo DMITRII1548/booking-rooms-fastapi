@@ -1,12 +1,5 @@
-"""
-Мини-БД в памяти для системы бронирования аудиторий (ЛР2).
-Только данные: три «таблицы» из ЛР1 и счётчик id для новых бронирований.
-"""
-
 from datetime import datetime, timedelta
 
-# Даты считаются от сегодняшнего дня: будущие брони всегда в будущем,
-# бронь №4 всегда вчерашняя (для проверки DELETE прошедшей брони → 400).
 today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 rooms = {
@@ -37,5 +30,4 @@ bookings = {
         "end_time": today + timedelta(days=-1, hours=13, minutes=30)},
 }
 
-# Следующий id для новой брони (как autoincrement, после удаления не переиспользуется)
 next_booking_id = 5

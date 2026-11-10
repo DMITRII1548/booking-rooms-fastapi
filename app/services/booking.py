@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import HTTPException
 from datetime import datetime
 from app.repositories import booking as booking_repository
@@ -71,10 +73,31 @@ def update_booking(booking_id: int, data: UpdateBookingRequest) -> dict[str, Any
             detail="Cannot update a booking that has already started"
         )
 
-    if booking_repository.has_overlap(booking["room_id"], data.start_time, data.end_time, booking_id):
+    room_id = data.room_id if data.room_id is not None else booking["room_id"]
+    start_time = data.start_time if data.start_time is not None else booking["start_time"]
+    end_time = data.end_time if data.end_time is not None else booking["end_time"]
+
+    if start_time >= end_time:
+        raise HTTPException(
+            400,
+            detail="start_time must be less than end_time"
+        )
+
+    if data.room_id is not None and room_repository.get_room_by_id(room_id) is None:
+        raise HTTPException(
+            404,
+            detail="Room not found"
+        )
+
+    if booking_repository.has_overlap(room_id, start_time, end_time, booking_id):
         raise HTTPException(
             400,
             detail="Room is overlap on this time"
         )
 
-    return booking_repository.update(booking_id=booking_id, start_time=data.start_time, end_time=data.end_time)
+    return booking_repository.update(
+        booking_id=booking_id,
+        room_id=room_id,
+        start_time=start_time,
+        end_time=end_time,
+    )

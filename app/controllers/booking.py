@@ -20,7 +20,7 @@ def get_booking(id: int) -> dict:
 def create_booking(data: CreateBookingRequest):
     return booking_service.create_booking(data)
 
-@router.put("/{id}")
+@router.patch("/{id}")
 def update_booking(data: UpdateBookingRequest, id: int) -> dict:
     return booking_service.update_booking(id, data)
 

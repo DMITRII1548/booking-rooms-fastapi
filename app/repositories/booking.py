@@ -48,6 +48,7 @@ def create(user_id: int, room_id: int, start_time: datetime, end_time: datetime)
 
 def update(
         booking_id: int,
+        room_id: int,
         start_time: datetime,
         end_time: datetime
 ) -> dict[str, Any] | None:
@@ -56,6 +57,7 @@ def update(
     if booking is None:
         return None
 
+    booking["room_id"] = room_id
     booking["start_time"] = start_time
     booking["end_time"] = end_time
     return booking
