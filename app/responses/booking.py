@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.responses.user import UserResponse
+
 
 class RoomResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -9,14 +11,6 @@ class RoomResponse(BaseModel):
     id: int
     number: str
     capacity: int
-
-
-class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    email: str
 
 
 class BookingResponse(BaseModel):

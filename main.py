@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 import app.models  # noqa: F401  registers models in Base.metadata
 from app.controllers.booking import router as booking_router
+from app.controllers.user import router as user_router
 from app.database import Base, SessionLocal, engine
 from app.seed import seed
 
@@ -18,4 +19,5 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(booking_router, prefix="/bookings", tags=["booking"])
+app.include_router(booking_router, prefix="/bookings", tags=["bookings"])
+app.include_router(user_router, prefix="/users", tags=["users"])
