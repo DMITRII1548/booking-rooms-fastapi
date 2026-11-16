@@ -1,33 +1,24 @@
-from datetime import datetime, timedelta
+import os
 
-today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+from dotenv import load_dotenv
+from sqlalchemy import URL, create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-rooms = {
-    1: {"id": 1, "number": "101", "capacity": 30},
-    2: {"id": 2, "number": "205", "capacity": 60},
-    3: {"id": 3, "number": "310", "capacity": 120},
-    4: {"id": 4, "number": "Акт.зал", "capacity": 300},
-}
+load_dotenv()
 
-users = {
-    1: {"id": 1, "name": "Иванов Сергей", "email": "ivanov@univ.uz"},
-    2: {"id": 2, "name": "Каримова Дилноза", "email": "karimova@univ.uz"},
-    3: {"id": 3, "name": "Петров Алексей", "email": "petrov@univ.uz"},
-}
+DATABASE_URL = URL.create(
+    drivername="postgresql+psycopg",
+    username=os.getenv("DB_USER", "postgres"),
+    password=os.getenv("DB_PASSWORD") or None,
+    host=os.getenv("DB_HOST", "localhost"),
+    port=int(os.getenv("DB_PORT", "5432")),
+    database=os.getenv("DB_NAME", "booking_rooms"),
+)
 
-bookings = {
-    1: {"id": 1, "room_id": 1, "user_id": 1,
-        "start_time": today + timedelta(days=1, hours=10),
-        "end_time": today + timedelta(days=1, hours=11, minutes=30)},
-    2: {"id": 2, "room_id": 2, "user_id": 2,
-        "start_time": today + timedelta(days=1, hours=14),
-        "end_time": today + timedelta(days=1, hours=15, minutes=30)},
-    3: {"id": 3, "room_id": 1, "user_id": 3,
-        "start_time": today + timedelta(days=2, hours=9),
-        "end_time": today + timedelta(days=2, hours=10, minutes=30)},
-    4: {"id": 4, "room_id": 3, "user_id": 1,
-        "start_time": today + timedelta(days=-1, hours=12),
-        "end_time": today + timedelta(days=-1, hours=13, minutes=30)},
-}
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
-next_booking_id = 5
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+class Base(DeclarativeBase):
+    pass

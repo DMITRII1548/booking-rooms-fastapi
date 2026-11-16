@@ -1,5 +1,7 @@
-from typing import Any
-from app import database
+from sqlalchemy.orm import Session
 
-def get_room_by_id(room_id: int) -> dict[str, Any] | None:
-    return database.rooms.get(room_id)
+from app.models.room import Room
+
+
+def get_room_by_id(db: Session, room_id: int) -> Room | None:
+    return db.get(Room, room_id)

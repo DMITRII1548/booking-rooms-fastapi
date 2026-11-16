@@ -1,5 +1,7 @@
-from typing import Any
-from app import database
+from sqlalchemy.orm import Session
 
-def get_user_by_id(user_id: int) -> dict[str, Any] | None:
-    return database.users.get(user_id)
+from app.models.user import User
+
+
+def get_user_by_id(db: Session, user_id: int) -> User | None:
+    return db.get(User, user_id)

@@ -1,75 +1,73 @@
 from datetime import datetime
-from typing import Any
 
-from app import database
+from sqlalchemy.orm import Session, joinedload
 
-
-def get_all() -> list[dict[str, Any]]:
-    return list(database.bookings.values())
+from app.models.booking import Booking
 
 
-def get_booking_by_id(booking_id: int) -> dict[str, Any] | None:
-    return database.bookings.get(booking_id)
+def get_all(db: Session) -> list[Booking]:
+    return db.query(Booking).order_by(Booking.start_time).all()
 
 
-def get_booking_with_details_by_id(booking_id: int) -> dict[str, Any] | None:
-    booking = get_booking_by_id(booking_id)
-
-    if booking is None:
-        return None
-
-    room = database.rooms.get(booking["room_id"])
-    user = database.users.get(booking["user_id"])
-
-    return {
-        **booking,
-        "room": {"id": room["id"], "number": room["number"]} if room else None,
-        "user": {"id": user["id"], "name": user["name"]} if user else None,
-    }
+def get_booking_by_id(db: Session, booking_id: int) -> Booking | None:
+    return db.get(Booking, booking_id)
 
 
-def delete_booking(booking_id: int) -> None:
-    database.bookings.pop(booking_id, None)
+def get_booking_with_details_by_id(db: Session, booking_id: int) -> Booking | None:
+    return (
+        db.query(Booking)
+        .options(joinedload(Booking.room), joinedload(Booking.user))
+        .filter(Booking.id == booking_id)
+        .first()
+    )
 
-def create(user_id: int, room_id: int, start_time: datetime, end_time: datetime) -> dict[str, Any]:
-    booking_id = database.next_booking_id
 
-    booking = {
-        "id": booking_id,
-        "room_id": room_id,
-        "user_id": user_id,
-        "start_time": start_time,
-        "end_time": end_time,
-    }
+def delete(db: Session, booking: Booking) -> None:
+    db.delete(booking)
+    db.flush()
 
-    database.bookings[booking_id] = booking
-    database.next_booking_id += 1
+
+def create(db: Session, user_id: int, room_id: int, start_time: datetime, end_time: datetime) -> Booking:
+    booking = Booking(user_id=user_id, room_id=room_id, start_time=start_time, end_time=end_time)
+    db.add(booking)
+    db.flush()
+    db.refresh(booking)
     return booking
+
 
 def update(
-        booking_id: int,
-        room_id: int,
-        start_time: datetime,
-        end_time: datetime
-) -> dict[str, Any] | None:
-    booking = database.bookings.get(booking_id)
+        db: Session,
+        booking: Booking,
+        room_id: int | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+) -> Booking:
+    if room_id is not None:
+        booking.room_id = room_id
+    if start_time is not None:
+        booking.start_time = start_time
+    if end_time is not None:
+        booking.end_time = end_time
 
-    if booking is None:
-        return None
-
-    booking["room_id"] = room_id
-    booking["start_time"] = start_time
-    booking["end_time"] = end_time
+    db.flush()
+    db.refresh(booking)
     return booking
 
+
 def has_overlap(
+        db: Session,
         room_id: int,
         start_time: datetime,
         end_time: datetime,
-        exclude_booking_id: int | None = None
+        exclude_booking_id: int | None = None,
 ) -> bool:
-    for b in database.bookings.values():
-        if b["room_id"] == room_id and b["id"] != exclude_booking_id \
-                and start_time < b["end_time"] and end_time > b["start_time"]:
-            return True
-    return False
+    query = db.query(Booking).filter(
+        Booking.room_id == room_id,
+        Booking.start_time < end_time,
+        Booking.end_time > start_time,
+    )
+
+    if exclude_booking_id is not None:
+        query = query.filter(Booking.id != exclude_booking_id)
+
+    return db.query(query.exists()).scalar()

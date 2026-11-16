@@ -1,30 +1,34 @@
-from http.client import HTTPResponse
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
-from starlette import status
-
-from app.services import booking as booking_service
-from fastapi import APIRouter
+from app.dependency import get_db
 from app.requests.booking import CreateBookingRequest, UpdateBookingRequest
+from app.responses.booking import BookingDetailResponse, BookingResponse
+from app.services import booking as booking_service
 
 router = APIRouter()
 
-@router.get("/")
-def get_bookings() -> list:
-    return booking_service.get_all_bookings()
 
-@router.get("/{id}")
-def get_booking(id: int) -> dict:
-    return booking_service.get_booking_by_id(id)
+@router.get("/", response_model=list[BookingResponse])
+def get_bookings(db: Session = Depends(get_db)):
+    return booking_service.get_all_bookings(db)
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
-def create_booking(data: CreateBookingRequest):
-    return booking_service.create_booking(data)
 
-@router.patch("/{id}")
-def update_booking(data: UpdateBookingRequest, id: int) -> dict:
-    return booking_service.update_booking(id, data)
+@router.get("/{id}", response_model=BookingDetailResponse)
+def get_booking(id: int, db: Session = Depends(get_db)):
+    return booking_service.get_booking_by_id(db, id)
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=BookingResponse)
+def create_booking(data: CreateBookingRequest, db: Session = Depends(get_db)):
+    return booking_service.create_booking(db, data)
+
+
+@router.patch("/{id}", response_model=BookingResponse)
+def update_booking(id: int, data: UpdateBookingRequest, db: Session = Depends(get_db)):
+    return booking_service.update_booking(db, id, data)
+
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_booking(id: int):
-    booking_service.delete_booking(id)
-
+def delete_booking(id: int, db: Session = Depends(get_db)):
+    booking_service.delete_booking(db, id)
