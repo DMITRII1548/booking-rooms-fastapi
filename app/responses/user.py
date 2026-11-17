@@ -7,3 +7,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
