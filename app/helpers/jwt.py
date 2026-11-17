@@ -1,4 +1,6 @@
 import os
+import uuid
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -10,10 +12,19 @@ SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
+
+@dataclass(frozen=True)
+class AccessTokenPayload:
+    user_id: int
+    jti: str
+    expires_at: datetime
+
+
 def create_access_token(user_id: int) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(user_id),
+        "jti": uuid.uuid4().hex,
         "iat": now,
         "exp": now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         "type": "access",
@@ -21,17 +32,22 @@ def create_access_token(user_id: int) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_access_token(token: str) -> int | None:
+def decode_access_token(token: str) -> AccessTokenPayload | None:
     try:
         payload = jwt.decode(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM],
-            options={"require": ["sub", "exp", "iat"]},
+            options={"require": ["sub", "exp", "iat", "jti"]},
         )
     except jwt.InvalidTokenError:
         return None
 
     if payload.get("type") != "access":
         return None
-    return int(payload["sub"])
+
+    return AccessTokenPayload(
+        user_id=int(payload["sub"]),
+        jti=payload["jti"],
+        expires_at=datetime.fromtimestamp(payload["exp"], timezone.utc),
+    )

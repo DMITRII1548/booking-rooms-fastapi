@@ -1,9 +1,10 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.helpers.jwt import create_access_token
+from app.helpers.jwt import AccessTokenPayload, create_access_token
 from app.helpers.password import hash_password, verify_password
 from app.models.user import User
+from app.repositories import revoked_token as revoked_token_repository
 from app.repositories import user as user_repository
 from app.requests.user import RegisterRequest, LoginRequest
 
@@ -32,3 +33,8 @@ def login(db: Session, data: LoginRequest) -> str:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 
     return create_access_token(user.id)
+
+def logout(db: Session, payload: AccessTokenPayload) -> None:
+    revoked_token_repository.revoke(db, payload.jti, payload.expires_at)
+    revoked_token_repository.delete_expired(db)
+    db.commit()
