@@ -5,6 +5,7 @@ from fastapi import FastAPI
 import app.models  # noqa: F401  registers models in Base.metadata
 from app.controllers.booking import router as booking_router
 from app.controllers.user import router as user_router
+from app.controllers.room import router as room_router
 from app.database import Base, SessionLocal, engine
 from app.seed import seed
 
@@ -21,3 +22,4 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(booking_router, prefix="/bookings", tags=["bookings"])
 app.include_router(user_router, prefix="/users", tags=["users"])
+app.include_router(room_router, prefix="/rooms", tags=["rooms"])
