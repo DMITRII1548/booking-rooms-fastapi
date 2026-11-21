@@ -4,9 +4,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.booking import Booking
+from app.models.user import User
 from app.repositories import booking as booking_repository
 from app.repositories import room as room_repository
-from app.repositories import user as user_repository
 from app.requests.booking import CreateBookingRequest, UpdateBookingRequest
 
 
@@ -21,6 +21,10 @@ def get_all_bookings(db: Session) -> list[Booking]:
     return booking_repository.get_all(db)
 
 
+def get_user_bookings(db: Session, current_user: User) -> list[Booking]:
+    return booking_repository.get_by_user_id_with_room(db, current_user.id)
+
+
 def get_booking_by_id(db: Session, booking_id: int) -> Booking:
     booking = booking_repository.get_booking_with_details_by_id(db, booking_id)
     if booking is None:
@@ -28,8 +32,10 @@ def get_booking_by_id(db: Session, booking_id: int) -> Booking:
     return booking
 
 
-def delete_booking(db: Session, booking_id: int) -> None:
+def delete_booking(db: Session, current_user: User, booking_id: int) -> None:
     booking = _get_booking_or_404(db, booking_id)
+    if booking.user_id != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="You cannot delete this booking. Access denied")
 
     if booking.start_time <= datetime.now():
         raise HTTPException(
@@ -41,19 +47,20 @@ def delete_booking(db: Session, booking_id: int) -> None:
     db.commit()
 
 
-def create_booking(db: Session, data: CreateBookingRequest) -> Booking:
+def create_booking(
+    db: Session,
+    current_user: User,
+    data: CreateBookingRequest,
+) -> Booking:
     if room_repository.get_room_by_id(db, data.room_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Room not found")
-
-    if user_repository.get_user_by_id(db, data.user_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
 
     if booking_repository.has_overlap(db, data.room_id, data.start_time, data.end_time):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Room is overlap on this time")
 
     booking = booking_repository.create(
         db,
-        user_id=data.user_id,
+        user_id=current_user.id,
         room_id=data.room_id,
         start_time=data.start_time,
         end_time=data.end_time,
@@ -62,8 +69,16 @@ def create_booking(db: Session, data: CreateBookingRequest) -> Booking:
     return booking
 
 
-def update_booking(db: Session, booking_id: int, data: UpdateBookingRequest) -> Booking:
+def update_booking(
+    db: Session,
+    current_user: User,
+    booking_id: int,
+    data: UpdateBookingRequest,
+) -> Booking:
     booking = _get_booking_or_404(db, booking_id)
+
+    if booking.user_id != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="You cannot update this booking. Access denied")
 
     if booking.start_time <= datetime.now():
         raise HTTPException(

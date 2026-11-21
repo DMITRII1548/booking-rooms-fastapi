@@ -9,6 +9,16 @@ def get_all(db: Session) -> list[Booking]:
     return db.query(Booking).order_by(Booking.start_time).all()
 
 
+def get_by_user_id_with_room(db: Session, user_id: int) -> list[Booking]:
+    return (
+        db.query(Booking)
+        .options(joinedload(Booking.room))
+        .filter(Booking.user_id == user_id)
+        .order_by(Booking.start_time)
+        .all()
+    )
+
+
 def get_booking_by_id(db: Session, booking_id: int) -> Booking | None:
     return db.get(Booking, booking_id)
 

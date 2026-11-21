@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 class CreateBookingRequest(BaseModel):
     room_id: int = Field(gt=0)
-    user_id: int = Field(gt=0)
     start_time: datetime
     end_time: datetime
 

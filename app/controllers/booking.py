@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.dependency import get_db
+from app.dependency import get_db, get_current_user
+from app.models.user import User
 from app.requests.booking import CreateBookingRequest, UpdateBookingRequest
 from app.responses.booking import BookingDetailResponse, BookingResponse
 from app.services import booking as booking_service
@@ -20,15 +21,28 @@ def get_booking(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=BookingResponse)
-def create_booking(data: CreateBookingRequest, db: Session = Depends(get_db)):
-    return booking_service.create_booking(db, data)
+def create_booking(
+    data: CreateBookingRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return booking_service.create_booking(db, current_user, data)
 
 
 @router.patch("/{id}", response_model=BookingResponse)
-def update_booking(id: int, data: UpdateBookingRequest, db: Session = Depends(get_db)):
-    return booking_service.update_booking(db, id, data)
+def update_booking(
+    id: int,
+    data: UpdateBookingRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return booking_service.update_booking(db, current_user, id, data)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_booking(id: int, db: Session = Depends(get_db)):
-    booking_service.delete_booking(db, id)
+def delete_booking(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    booking_service.delete_booking(db, current_user, id)

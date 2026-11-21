@@ -26,3 +26,11 @@ class BookingResponse(BaseModel):
 class BookingDetailResponse(BookingResponse):
     room: RoomResponse
     user: UserResponse
+
+
+class BookingWithRoomResponse(BookingResponse):
+    room: RoomResponse
+
+
+class UserWithBookingsResponse(UserResponse):
+    bookings: list[BookingWithRoomResponse]
